@@ -280,13 +280,40 @@
     const hash = `#${view}`;
     if (location.hash === hash) {
       render();
-      scrollTo({ top: 0, behavior: "auto" });
+      stageTop();
     } else location.hash = hash;
   }
 
+  function appScroller() {
+    const container = $("app-scroll");
+    return getComputedStyle(container).position === "fixed" ? container : window;
+  }
+
   function stageTop(focus = false) {
-    scrollTo({ top: 0, behavior: "auto" });
+    appScroller().scrollTo({ top: 0, behavior: "auto" });
     if (focus) $("stage-title")?.focus({ preventScroll: true });
+  }
+
+  function scrollToPlayingSong() {
+    const card = $("playing-song");
+    const lights = $("stage-pulse-dots");
+    if (!card || !lights) return;
+
+    const scroller = appScroller();
+    const viewportTop = scroller === window ? 0 : scroller.getBoundingClientRect().top;
+    const currentTop = scroller === window ? window.scrollY : scroller.scrollTop;
+    const dock = $("dock");
+    const viewportBottom = dock.hidden ? window.innerHeight : dock.getBoundingClientRect().top;
+    const pulse = lights.getBoundingClientRect();
+    const notes = $("scene-notes");
+    const firstNote = !notes.hidden && notes.querySelector(".note-text, .empty-box");
+    const note = firstNote ? firstNote.getBoundingClientRect() : pulse;
+    const readingBottom = Math.min(note.bottom, note.top + 48);
+    const cardTop = card.getBoundingClientRect().top - viewportTop;
+    const pulseTop = pulse.top - viewportTop;
+    const offset = Math.min(pulseTop - 12, Math.max(cardTop - 12, readingBottom - viewportBottom + 12));
+    const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
+    scroller.scrollTo({ top: Math.max(0, currentTop + offset), behavior });
   }
 
   function setMode(mode) {
@@ -645,7 +672,7 @@
     if (!item) return stageHero(stage);
     const songItems = stage.fixed ? stage.set.items.filter(row => row.type === "song") : [];
     const slot = stage.fixed ? `${songItems.indexOf(stage.item) + 1} / ${songItems.length}` : "FRI";
-    return `<article class="stage-main ${stage.review ? "review" : ""}">
+    return `<article id="playing-song" class="stage-main ${stage.review ? "review" : ""}">
       <div class="stage-card-head">
         <p class="eyebrow stage-label ${stage.review ? "review-label" : ""}"><span class="live-dot"></span>${stage.review ? "Tilbakeblikk" : "Spilles nå"}</p>
         <span class="slot-label">${slot}</span>
@@ -1738,6 +1765,7 @@
       if (!item?.bpm) return;
       pulseEnabled = !pulseEnabled;
       updateStageMetronome(item);
+      if (pulseEnabled) scrollToPlayingSong();
     },
     "half-tempo"() {
       if (!stageState().song?.bpm) return;

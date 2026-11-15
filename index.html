@@ -18,33 +18,35 @@
   <script defer src="./update.js"></script>
   <script defer src="./app.js"></script>
 </head>
-<body data-channel="stable" data-version="9.1.0">
+<body data-channel="stable" data-version="9.1.1">
   <div class="status-bar-fill" aria-hidden="true"></div>
-  <a class="skip-link" href="#content">Hopp til innhold</a>
-  <header class="masthead">
-    <div class="masthead-inner">
-      <a class="brand" href="#scene" aria-label="Bak settet – på scenen">
-        <span class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 44 44" fill="none" focusable="false">
-            <rect x=".5" y=".5" width="43" height="43" rx="13" fill="currentColor" fill-opacity=".11" stroke="currentColor" stroke-opacity=".44"/>
-            <path d="m14 12 13 10m3-10-13 10m-6 2h22m-21 0v5c0 2 4.5 4 10 4s10-2 10-4v-5m-16 1v5m6-5v7m6-7v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </span>
-        <span class="brand-words"><strong>Bak settet</strong><small>Trommeark for scenen</small></span>
-      </a>
-      <nav class="navigation" aria-label="Hovedmeny">
-        <a href="#scene" data-nav="scene">På scenen</a>
-        <a href="#settlister" data-nav="settlister">Settlister</a>
-        <a href="#repertoar" data-nav="repertoar">Repertoar</a>
-      </nav>
-      <button class="icon-button settings-trigger" id="settings-button" type="button" data-action="settings" aria-label="Innstillinger"></button>
-    </div>
-  </header>
-  <main id="content" class="shell" tabindex="-1">
-    <aside id="release-strip" class="release-strip" hidden></aside>
-    <div id="view"><p class="loading">Laster trommearket …</p></div>
-    <noscript><p class="empty-box">Bak settet trenger JavaScript for å vise settlisten.</p></noscript>
-  </main>
+  <div id="app-scroll">
+    <a class="skip-link" href="#content">Hopp til innhold</a>
+    <header class="masthead">
+      <div class="masthead-inner">
+        <a class="brand" href="#scene" aria-label="Bak settet – på scenen">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 44 44" fill="none" focusable="false">
+              <rect x=".5" y=".5" width="43" height="43" rx="13" fill="currentColor" fill-opacity=".11" stroke="currentColor" stroke-opacity=".44"/>
+              <path d="m14 12 13 10m3-10-13 10m-6 2h22m-21 0v5c0 2 4.5 4 10 4s10-2 10-4v-5m-16 1v5m6-5v7m6-7v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="brand-words"><strong>Bak settet</strong><small>Trommeark for scenen</small></span>
+        </a>
+        <nav class="navigation" aria-label="Hovedmeny">
+          <a href="#scene" data-nav="scene">På scenen</a>
+          <a href="#settlister" data-nav="settlister">Settlister</a>
+          <a href="#repertoar" data-nav="repertoar">Repertoar</a>
+        </nav>
+        <button class="icon-button settings-trigger" id="settings-button" type="button" data-action="settings" aria-label="Innstillinger"></button>
+      </div>
+    </header>
+    <main id="content" class="shell" tabindex="-1">
+      <aside id="release-strip" class="release-strip" hidden></aside>
+      <div id="view"><p class="loading">Laster trommearket …</p></div>
+      <noscript><p class="empty-box">Bak settet trenger JavaScript for å vise settlisten.</p></noscript>
+    </main>
+  </div>
   <div id="dock" class="dock" hidden></div>
   <dialog id="modal" aria-labelledby="modal-title">
     <div class="modal-inner">

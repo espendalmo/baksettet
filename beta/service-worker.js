@@ -1,4 +1,4 @@
-const VERSION = "9.1.0";
+const VERSION = "9.1.1";
 const CHANNEL = "beta";
 const SCOPE = new URL("./", self.location.href);
 const PREFIX = `bak-settet:${SCOPE.pathname}:${CHANNEL}:`;
