@@ -284,13 +284,8 @@
     } else location.hash = hash;
   }
 
-  function appScroller() {
-    const container = $("app-scroll");
-    return getComputedStyle(container).position === "fixed" ? container : window;
-  }
-
   function stageTop(focus = false) {
-    appScroller().scrollTo({ top: 0, behavior: "auto" });
+    window.scrollTo({ top: 0, behavior: "auto" });
     if (focus) $("stage-title")?.focus({ preventScroll: true });
   }
 
@@ -299,21 +294,19 @@
     const lights = $("stage-pulse-dots");
     if (!card || !lights) return;
 
-    const scroller = appScroller();
-    const viewportTop = scroller === window ? 0 : scroller.getBoundingClientRect().top;
-    const currentTop = scroller === window ? window.scrollY : scroller.scrollTop;
+    const viewportTop = $("status-bar-fill")?.getBoundingClientRect().bottom ?? 0;
     const dock = $("dock");
     const viewportBottom = dock.hidden ? window.innerHeight : dock.getBoundingClientRect().top;
     const pulse = lights.getBoundingClientRect();
     const notes = $("scene-notes");
     const firstNote = !notes.hidden && notes.querySelector(".note-text, .empty-box");
-    const note = firstNote ? firstNote.getBoundingClientRect() : pulse;
-    const readingBottom = Math.min(note.bottom, note.top + 48);
+    const note = firstNote ? firstNote.getBoundingClientRect() : null;
+    const readingBottom = note ? Math.min(note.bottom, note.top + 48) : pulse.bottom;
     const cardTop = card.getBoundingClientRect().top - viewportTop;
     const pulseTop = pulse.top - viewportTop;
     const offset = Math.min(pulseTop - 12, Math.max(cardTop - 12, readingBottom - viewportBottom + 12));
     const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
-    scroller.scrollTo({ top: Math.max(0, currentTop + offset), behavior });
+    window.scrollTo({ top: Math.max(0, window.scrollY + offset), behavior });
   }
 
   function setMode(mode) {

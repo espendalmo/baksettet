@@ -21,7 +21,6 @@
   --shadow: #08090c75;
   --scrim: #090a10bb;
   --page: 1136px;
-  --top-inset: env(safe-area-inset-top, 0px);
   --gutter: clamp(14px, 3vw, 30px);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   font-synthesis: none;
@@ -53,11 +52,15 @@
 }
 
 * { box-sizing: border-box; }
-html { background: var(--bg); scroll-padding: 16px 0 142px; }
+html {
+  background: var(--bg); scroll-padding: 16px 0 142px;
+  overflow-x: hidden; overscroll-behavior-x: none;
+}
+body, #app { overflow-x: clip; }
 html, dialog { touch-action: pan-x pan-y; }
 body { margin: 0; min-height: 100vh; min-height: 100dvh; color: var(--text); background: var(--bg); }
-body.has-dock #app-scroll { padding-bottom: calc(124px + env(safe-area-inset-bottom)); }
-body:has(dialog[open]) { overflow: hidden; }
+body.has-dock #app { padding-bottom: calc(124px + env(safe-area-inset-bottom)); }
+html:has(dialog[open]) { overflow-y: hidden; }
 [hidden] { display: none !important; }
 button, input, select, textarea { font: inherit; }
 button { touch-action: manipulation; }
@@ -116,22 +119,16 @@ textarea { resize: vertical; min-height: 88px; line-height: 1.45; }
 .loading { margin-top: 30px; color: var(--muted); }
 
 .status-bar-fill { display: none; }
-/* Keep the document still so iOS cannot fade content into its top edge. */
-@media (display-mode: standalone), (display-mode: fullscreen) {
-  @supports (-webkit-touch-callout: none) {
-    html, body { overflow: hidden; }
-    #app-scroll {
-      --top-inset: 0px;
-      position: fixed; inset: max(8px, env(safe-area-inset-top, 0px)) 0 0;
-      overflow-y: auto; overscroll-behavior: none; touch-action: pan-y;
-      scroll-padding: 16px 0 142px;
-    }
-    body:has(dialog[open]) #app-scroll { overflow-y: hidden; }
-    .status-bar-fill {
-      display: block; position: fixed; inset: 0 0 auto;
-      height: max(8px, env(safe-area-inset-top, 0px));
-      background: var(--bg); z-index: 2; pointer-events: none;
-    }
+/* The fixed, opaque strip lets iOS use a solid fill for its top scroll edge. */
+@media (display-mode: standalone) {
+  .status-bar-fill {
+    display: block;
+    position: fixed;
+    inset: 0 0 auto;
+    height: max(8px, env(safe-area-inset-top, 0px));
+    background: var(--bg);
+    pointer-events: none;
+    z-index: 2;
   }
 }
 
@@ -142,7 +139,7 @@ textarea { resize: vertical; min-height: 88px; line-height: 1.45; }
 }
 .masthead-inner {
   display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 24px;
-  padding-top: calc(16px + var(--top-inset)); padding-bottom: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px)); padding-bottom: 16px;
 }
 .brand { display: inline-flex; align-items: center; gap: 11px; width: max-content; color: var(--text); text-decoration: none; }
 .brand-mark { width: 43px; height: 43px; color: var(--accent); flex: 0 0 auto; }
@@ -451,7 +448,7 @@ dialog::backdrop { background: var(--scrim); }
 .toast .button { min-height: 44px; }
 
 @media (max-width: 700px) {
-  .masthead-inner { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding-top: calc(9px + var(--top-inset)); padding-bottom: 8px; }
+  .masthead-inner { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding-top: calc(9px + env(safe-area-inset-top, 0px)); padding-bottom: 8px; }
   .brand-mark { width: 37px; height: 37px; }
   .settings-trigger { grid-column: 2; grid-row: 1; width: 44px; min-height: 44px; }
   .navigation { grid-column: 1 / -1; justify-self: stretch; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
@@ -485,7 +482,7 @@ dialog::backdrop { background: var(--scrim); }
   .stage-layout { grid-template-columns: minmax(0, 1fr) minmax(210px, .65fr); }
 }
 @media (max-height: 500px) and (orientation: landscape) {
-  .masthead-inner { padding-top: calc(6px + var(--top-inset)); padding-bottom: 6px; }
+  .masthead-inner { padding-top: calc(6px + env(safe-area-inset-top, 0px)); padding-bottom: 6px; }
   .shell { padding-top: 11px; }
   .stage-main { padding: 14px; }
   .signal-grid { margin-top: 12px; }
