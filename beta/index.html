@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="nb">
+<head>
+  <meta name="robots" content="noindex">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#121318">
+  <meta name="description" content="Settlister, startsignaler og spillenotater for trommiser på scenen.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Bak settet Beta">
+  <title>Bak settet Beta – Trommeark for scenen</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="stylesheet" href="./app.css">
+  <script defer src="./seed.js"></script>
+  <script defer src="./model.js"></script>
+  <script defer src="./update.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body data-channel="beta" data-version="9.0.2">
+  <a class="skip-link" href="#content">Hopp til innhold</a>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <a class="brand" href="#scene" aria-label="Bak settet – på scenen">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 44 44" fill="none" focusable="false">
+            <rect x=".5" y=".5" width="43" height="43" rx="13" fill="currentColor" fill-opacity=".11" stroke="currentColor" stroke-opacity=".44"/>
+            <path d="m14 12 13 10m3-10-13 10m-6 2h22m-21 0v5c0 2 4.5 4 10 4s10-2 10-4v-5m-16 1v5m6-5v7m6-7v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="brand-words"><strong>Bak settet</strong><small>Trommeark for scenen</small></span>
+      </a>
+      <nav class="navigation" aria-label="Hovedmeny">
+        <a href="#scene" data-nav="scene">På scenen</a>
+        <a href="#settlister" data-nav="settlister">Settlister</a>
+        <a href="#repertoar" data-nav="repertoar">Repertoar</a>
+      </nav>
+      <button class="icon-button settings-trigger" id="settings-button" type="button" data-action="settings" aria-label="Innstillinger"></button>
+    </div>
+  </header>
+  <main id="content" class="shell" tabindex="-1">
+    <aside id="release-strip" class="release-strip" hidden></aside>
+    <div id="view"><p class="loading">Laster trommearket …</p></div>
+    <noscript><p class="empty-box">Bak settet trenger JavaScript for å vise settlista.</p></noscript>
+  </main>
+  <div id="dock" class="dock" hidden></div>
+  <dialog id="modal" aria-labelledby="modal-title">
+    <div class="modal-inner">
+      <header class="modal-header">
+        <h2 id="modal-title"></h2>
+        <button type="button" data-action="close-dialog" class="icon-button" aria-label="Lukk"></button>
+      </header>
+      <div id="modal-content"></div>
+    </div>
+  </dialog>
+  <div id="toast" class="toast" hidden><span id="toast-message" role="status"></span></div>
+  <div id="announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>
