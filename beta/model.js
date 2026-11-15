@@ -46,6 +46,12 @@
     return match ? { label: match[1], tone: match[2], icon: match[3] } : { label, tone: "other", icon: "flag" };
   }
 
+  function normalizeCues(cues) {
+    return Object.fromEntries(cueFields
+      .map(([field]) => [field, str(cues?.[field]).trim()])
+      .filter(([, value]) => value));
+  }
+
   function normalizeDataset(raw, { strict = false } = {}) {
     if (!Array.isArray(raw?.songs) || !Array.isArray(raw?.projects)) {
       throw new Error("Dataene må inneholde låter og prosjekter.");
@@ -99,17 +105,20 @@
       if (strict && memberships.some(pid => !projectIds.has(pid))) {
         throw new Error(`«${title}» tilhører et ukjent prosjekt.`);
       }
-      const cues = Object.fromEntries(cueFields
-        .map(([field]) => [field, str(input.cues?.[field]).trim()])
-        .filter(([, value]) => value));
       const song = {
         ...input, id, title, artist, bpm: Number.isFinite(bpm) && bpm > 0 ? bpm : null,
         start: str(input.start), energy: str(input.energy), notes: str(input.notes),
         tags: [...new Set(strings(input.tags).map(tag => tag.trim()).filter(Boolean))],
         projects: [...new Set(memberships.filter(pid => projectIds.has(pid)))]
       };
-      if (Object.keys(cues).length) song.cues = cues;
-      else delete song.cues;
+      for (const field of ["cues", "percussionCues"]) {
+        const cues = normalizeCues(input[field]);
+        if (Object.keys(cues).length) song[field] = cues;
+        else delete song[field];
+      }
+      const percussionNotes = str(input.percussionNotes);
+      if (percussionNotes.trim()) song.percussionNotes = percussionNotes;
+      else delete song.percussionNotes;
       songs.push(song);
     }
 
@@ -234,7 +243,8 @@
       wakeEnabled: raw?.wakeEnabled !== false,
       pulseHalf: raw?.pulseHalf === true,
       pulseAccent: raw?.pulseAccent !== false,
-      sceneNotesVisible: raw?.sceneNotesVisible !== false
+      sceneNotesVisible: raw?.sceneNotesVisible !== false,
+      noteMode: raw?.noteMode === "percussion" ? "percussion" : "drums"
     };
   }
 
@@ -247,7 +257,9 @@
       const artist = norm(song.artist);
       const haystack = norm([
         song.title, song.artist, song.bpm ? `${song.bpm} BPM` : "", song.start,
-        startCue(song.start)?.label, song.energy, ...song.tags, song.notes, ...Object.values(song.cues || {})
+        startCue(song.start)?.label, song.energy, ...song.tags,
+        song.notes, ...Object.values(song.cues || {}),
+        song.percussionNotes, ...Object.values(song.percussionCues || {})
       ].join(" "));
       const score = title === phrase ? 100 : title.startsWith(phrase) ? 80
         : artist.startsWith(phrase) ? 65 : title.includes(phrase) ? 50 : artist.includes(phrase) ? 40 : 25;

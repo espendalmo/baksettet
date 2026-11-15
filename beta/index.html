@@ -3,11 +3,11 @@
 <head>
   <meta name="robots" content="noindex">
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#121318">
   <meta name="description" content="Settlister, startsignaler og spillenotater for trommiser på scenen.">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Bak settet Beta">
   <title>Bak settet Beta – Trommeark for scenen</title>
   <link rel="manifest" href="./manifest.webmanifest">
@@ -19,7 +19,8 @@
   <script defer src="./update.js"></script>
   <script defer src="./app.js"></script>
 </head>
-<body data-channel="beta" data-version="9.0.2">
+<body data-channel="beta" data-version="9.1.0">
+  <div class="status-bar-fill" aria-hidden="true"></div>
   <a class="skip-link" href="#content">Hopp til innhold</a>
   <header class="masthead">
     <div class="masthead-inner">
@@ -43,7 +44,7 @@
   <main id="content" class="shell" tabindex="-1">
     <aside id="release-strip" class="release-strip" hidden></aside>
     <div id="view"><p class="loading">Laster trommearket …</p></div>
-    <noscript><p class="empty-box">Bak settet trenger JavaScript for å vise settlista.</p></noscript>
+    <noscript><p class="empty-box">Bak settet trenger JavaScript for å vise settlisten.</p></noscript>
   </main>
   <div id="dock" class="dock" hidden></div>
   <dialog id="modal" aria-labelledby="modal-title">

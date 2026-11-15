@@ -13,6 +13,7 @@
   const modal = $("modal");
   const views = ["scene", "settlister", "repertoar", "editor"];
   const modeName = { fixed: "Fast settliste", free: "Frie forslag" };
+  const noteModes = { drums: "Trommesett", percussion: "Perkusjon" };
   const icons = {
     drum: '<ellipse cx="12" cy="8" rx="8" ry="3"/><path d="M4 8v8c0 1.7 3.6 3 8 3s8-1.3 8-3V8M8 12v5m4-5v7m4-7v5"/>',
     sticks: '<path d="m4 4 14 14m2 2-2-2m2-14L6 18m-2 2 2-2M4 9v4m16-4v4"/>',
@@ -300,19 +301,27 @@
   }
 
   function changeProject(id) {
-    if (!model.projects.some(p => p.id === id) || !commit(next => { next.activeProjectId = id; })) return;
+    if (!model.projects.some(p => p.id === id) || !commit(next => { next.activeProjectId = id; })) return false;
     reviewId = null;
     suggestions = null;
     filter = "all";
-    render();
+    const view = activeView();
+    if (view === "repertoar") renderLibraryContent();
+    else if (view === "settlister") renderSetlistContent();
+    else render();
+    if (view === "settlister") updateSetlistOptions($("view"));
+    if (modal.open && modalType === "context") updateSetlistOptions(modal);
     announce(`Prosjekt ${project().name}`);
+    return true;
   }
 
   function changeSetlist(id) {
-    if (!project().setlists.some(set => set.id === id)) return;
-    if (!commit(next => { next.state.activeSetlistByProject[project(next).id] = id; })) return;
+    if (!project().setlists.some(set => set.id === id)) return false;
+    if (!commit(next => { next.state.activeSetlistByProject[project(next).id] = id; })) return false;
     reviewId = null;
-    render();
+    if (activeView() === "settlister") renderSetlistContent();
+    else render();
+    return true;
   }
 
   function selectFixed(id, { navigate = false } = {}) {
@@ -490,10 +499,58 @@
   }
 
   function notesMarkup(item) {
-    const groups = M.cueFields.map(([key, label]) => item.cues?.[key]
-      ? `<div class="note-group"><p class="eyebrow">${label}</p>${noteParts(item.cues[key])}</div>` : "").filter(Boolean);
-    if (item.notes.trim()) groups.push(`<div class="note-group">${groups.length ? '<p class="eyebrow">Øvrig notat</p>' : ""}${noteParts(item.notes)}</div>`);
-    return groups.join("") || empty("Ingen spillenotater for denne låta.");
+    const percussion = model.settings.noteMode === "percussion";
+    const text = percussion ? item.percussionNotes : item.notes;
+    const cues = percussion ? item.percussionCues : item.cues;
+    const groups = M.cueFields.map(([key, label]) => cues?.[key]
+      ? `<div class="note-group"><p class="eyebrow">${label}</p>${noteParts(cues[key])}</div>` : "").filter(Boolean);
+    if (text?.trim()) groups.push(`<div class="note-group">${groups.length ? '<p class="eyebrow">Øvrig notat</p>' : ""}${noteParts(text)}</div>`);
+    return groups.join("") || empty(percussion
+      ? "Ingen perkusjonsnotater for denne låten."
+      : "Ingen trommesettnotater for denne låten.");
+  }
+
+  function notesPanel(item, { stage = false } = {}) {
+    const visible = model.settings.sceneNotesVisible;
+    const instrument = `<div class="note-modes" role="group" aria-label="Instrument for spillenotater">
+        ${Object.entries(noteModes).map(([key, label]) => button("note-mode", label, {
+          style: "quiet", data: `${idData(key)} ${pressed(model.settings.noteMode === key)}`
+        })).join("")}
+      </div>`;
+    const songData = `data-note-song="${esc(item.id)}"`;
+    const notes = `<div class="notes-body" data-note-content ${stage ? 'id="scene-notes"' : ""} ${stage && !visible ? "hidden" : ""}>${notesMarkup(item)}</div>`;
+    if (!stage) return `<div class="song-notes" ${songData}>${instrument}${notes}</div>`;
+
+    return `<section class="stage-notes song-notes" ${songData} aria-labelledby="notes-label">
+      <h2 class="sr-only" id="notes-label">Spillenotater</h2>
+      <div class="notes-head">
+        ${instrument}
+        <button class="button quiet" id="scene-notes-toggle" type="button" data-action="notes" aria-expanded="${visible}" aria-controls="scene-notes">
+          ${icon("note")}<span id="scene-notes-toggle-label">${visible ? "Skjul" : "Vis notater"}</span>
+        </button>
+      </div>
+      ${notes}
+    </section>`;
+  }
+
+  function updateNoteMode() {
+    document.querySelectorAll("#view [data-note-song], #modal[open] [data-note-song]").forEach(panel => {
+      const item = song(panel.dataset.noteSong);
+      if (!item) return;
+      panel.querySelectorAll('[data-action="note-mode"]').forEach(control => {
+        control.setAttribute("aria-pressed", String(control.dataset.id === model.settings.noteMode));
+      });
+      panel.querySelector("[data-note-content]").innerHTML = notesMarkup(item);
+    });
+  }
+
+  function updateStageNotesVisibility() {
+    const panel = $("scene-notes");
+    if (!panel) return;
+    const visible = model.settings.sceneNotesVisible;
+    panel.hidden = !visible;
+    $("scene-notes-toggle").setAttribute("aria-expanded", String(visible));
+    $("scene-notes-toggle-label").textContent = visible ? "Skjul" : "Vis notater";
   }
 
   function tagsMarkup(item) {
@@ -513,18 +570,31 @@
     if (!item.bpm) {
       return `<div class="signal"><span class="eyebrow">${icon("pulse")} Tempo</span><strong>– BPM</strong></div>`;
     }
-    const half = model.settings.pulseHalf;
-    const bpm = (half ? item.bpm / 2 : item.bpm).toLocaleString("nb", { maximumFractionDigits: 3, useGrouping: false });
-    const tempoLabel = `${pulseEnabled ? "Stopp" : "Start"} visuell puls · ${bpm} BPM`;
-    return `<button class="signal tempo" data-action="pulse" ${pressed(pulseEnabled)} aria-label="${tempoLabel}" type="button">
+    return `<button class="signal tempo" id="stage-pulse" data-action="pulse" type="button">
       <span class="eyebrow">${icon("pulse")} Tempo</span>
-      <span class="tempo-readout"><strong>${bpm}</strong><small>BPM</small></span>
-      <span class="tempo-status">Puls ${pulseEnabled ? "på" : "av"}</span>
+      <span class="tempo-readout"><strong id="stage-bpm"></strong><small>BPM</small></span>
+      <span class="tempo-status" id="stage-pulse-status"></span>
     </button>
-    <button class="signal half-tempo" data-action="half-tempo" ${pressed(half)} type="button">
-      <span>Halvtempo</span><span class="tempo-status" aria-hidden="true">${half ? "På" : "Av"}</span>
+    <button class="signal half-tempo" id="stage-half-tempo" data-action="half-tempo" type="button">
+      <span>Halvtempo</span><span class="tempo-status" id="stage-half-status" aria-hidden="true"></span>
     </button>
-    ${pulseEnabled ? '<div class="pulse-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>' : ""}`;
+    <div class="pulse-dots" id="stage-pulse-dots" aria-hidden="true" hidden><i></i><i></i><i></i><i></i></div>`;
+  }
+
+  function updateStageMetronome(item) {
+    if (item?.bpm) {
+      const half = model.settings.pulseHalf;
+      const bpm = (half ? item.bpm / 2 : item.bpm).toLocaleString("nb", { maximumFractionDigits: 3, useGrouping: false });
+      const control = $("stage-pulse");
+      control.setAttribute("aria-pressed", String(pulseEnabled));
+      control.setAttribute("aria-label", `${pulseEnabled ? "Stopp" : "Start"} visuell puls · ${bpm} BPM`);
+      $("stage-bpm").textContent = bpm;
+      $("stage-pulse-status").textContent = pulseEnabled ? "Puls på" : "Puls av";
+      $("stage-half-tempo").setAttribute("aria-pressed", String(half));
+      $("stage-half-status").textContent = half ? "På" : "Av";
+      $("stage-pulse-dots").hidden = !pulseEnabled;
+    }
+    syncPulse(item);
   }
 
   const drumPattern = `<svg class="hero-pattern" viewBox="0 0 350 300" fill="none" aria-hidden="true">
@@ -541,26 +611,26 @@
     const pause = stage.item?.type === "pause";
     let kicker = "På scenen", title, text, action = "";
     if (pause) {
-      kicker = "Pause i settlista";
+      kicker = "Pause i settlisten";
       title = stage.item.label;
       const nextSong = stage.later.find(item => item.type === "song");
       text = nextSong ? `Neste låt er ${song(nextSong.songId).title}.` : "Fortsett når dere er klare.";
     } else if (noList) {
       kicker = "Før dere går på";
-      title = "Settlista er tom";
+      title = "Settlisten er tom";
       text = "Legg inn låtene i den rekkefølgen dere skal spille dem.";
       action = link("settlister", "Bygg settliste", "plus", "primary");
     } else if (exhausted) {
-      title = stage.fixed ? "Settlista er spilt" : "Alle låtene er spilt";
-      text = stage.fixed ? "Alle punktene i settlista er ferdige. Historikken ligger i repertoaret." : "Du finner låtene og spillehistorikken i repertoaret.";
+      title = stage.fixed ? "Settlisten er spilt" : "Alle låtene er spilt";
+      text = stage.fixed ? "Alle punktene i settlisten er ferdige. Historikken ligger i repertoaret." : "Du finner låtene og spillehistorikken i repertoaret.";
       action = link("repertoar", "Se repertoaret", "list", "quiet");
     } else if (stage.fixed) {
       title = stage.run.hold ? "Klar for neste?" : "Låter gjenstår";
-      text = stage.run.hold ? "Gå videre når dere er klare." : "Du kan hente opp en tidligere låt som står igjen i settlista.";
+      text = stage.run.hold ? "Gå videre når dere er klare." : "Du kan hente opp en tidligere låt som står igjen i settlisten.";
     } else {
       kicker = "Frie forslag";
       title = "Hva spiller vi nå?";
-      text = "Velg et forslag fra køen eller finn låta i repertoaret.";
+      text = "Velg et forslag fra køen eller finn låten i repertoaret.";
       action = button("find-song", "Finn låt", { symbol: "search", style: "primary" });
     }
     return `<article class="stage-main stage-hero">${drumPattern}<div class="hero-content">
@@ -575,7 +645,6 @@
     if (!item) return stageHero(stage);
     const songItems = stage.fixed ? stage.set.items.filter(row => row.type === "song") : [];
     const slot = stage.fixed ? `${songItems.indexOf(stage.item) + 1} / ${songItems.length}` : "FRI";
-    const visible = model.settings.sceneNotesVisible;
     return `<article class="stage-main ${stage.review ? "review" : ""}">
       <div class="stage-card-head">
         <p class="eyebrow stage-label ${stage.review ? "review-label" : ""}"><span class="live-dot"></span>${stage.review ? "Tilbakeblikk" : "Spilles nå"}</p>
@@ -586,13 +655,7 @@
       <div class="signal-grid ${item.bpm ? "has-tempo" : ""}">
         ${cueMarkup(item)}${tempoMarkup(item)}
       </div>
-      <section class="stage-notes" aria-labelledby="notes-label">
-        <div class="notes-head">
-          <h2 id="notes-label">Spillenotater</h2>
-          ${button("notes", visible ? "Skjul" : "Vis notater", { symbol: "note", style: "quiet", data: `aria-expanded="${visible}" aria-controls="scene-notes"` })}
-        </div>
-        <div class="notes-body" id="scene-notes" ${visible ? "" : "hidden"}>${notesMarkup(item)}</div>
-      </section>
+      ${notesPanel(item, { stage: true })}
       ${tagsMarkup(item)}
     </article>`;
   }
@@ -635,12 +698,12 @@
     const queued = stage.fixed ? stage.later.slice(0, 3).map((item, index) => fixedQueueItem(item, stage, index))
       : freeSuggestions().map(freeQueueItem);
     const emptyQueue = stage.fixed
-      ? (stage.set.items.length ? "Ingen flere punkter etter denne plassen." : "Låter og pauser dukker opp her når du fyller settlista.")
+      ? (stage.set.items.length ? "Ingen flere punkter etter denne plassen." : "Låter og pauser dukker opp her når du fyller settlisten.")
       : "Ingen forslag akkurat nå.";
     const recent = current.history.slice(-5).reverse().map(song).filter(Boolean);
     return `<aside class="queue-panel" aria-labelledby="queue-title">
       <div class="queue-header"><h2 id="queue-title">${stage.fixed ? "I kø" : "Forslag til neste"}</h2>
-        ${stage.fixed ? link("settlister", "Hele lista", "list", "quiet") : iconButton("suggest", "Tre nye forslag", "refresh", { disabled: !queued.length })}
+        ${stage.fixed ? link("settlister", "Hele listen", "list", "quiet") : iconButton("suggest", "Tre nye forslag", "refresh", { disabled: !queued.length })}
       </div>
       <div class="progress-block">
         <div class="progress-meta"><span>Sett ${setNo} · ${Math.max(0, current.history.length - setStart)} spilt</span><span>${played} / ${count} låter</span></div>
@@ -665,7 +728,7 @@
     else if (!stage.fixed || !model.settings.autoNext) action = "Marker som spilt";
     else if (upcoming?.type === "pause") action = "Spilt · til pause";
     else if (!upcoming) action = "Marker som spilt";
-    const caption = stage.review ? ["Tilbakeblikk", "Plassen i settlista beholdes"]
+    const caption = stage.review ? ["Tilbakeblikk", "Plassen i settlisten beholdes"]
       : nextTitle ? ["Neste", nextTitle]
       : stage.fixed ? ["Fast settliste", stage.pending.length > 1 ? "Tidligere låter gjenstår" : "Siste punkt"]
       : ["Frie forslag", "Velg neste låt etterpå"];
@@ -696,7 +759,7 @@
     $("dock").innerHTML = dock;
     $("dock").hidden = !dock;
     root.classList.toggle("has-dock", Boolean(dock));
-    syncPulse(stage.song);
+    updateStageMetronome(stage.song);
   }
 
   function projectSelect(label = "Prosjekt", { editor = false } = {}) {
@@ -707,11 +770,18 @@
     </select></label>`;
   }
 
-  function setSelect() {
+  function setOptions() {
     const current = setlist();
-    return `<label class="field-label">Settliste<select data-control="setlist">
-      ${project().setlists.map(item => `<option value="${esc(item.id)}"${item.id === current.id ? " selected" : ""}>${esc(item.name)}</option>`).join("")}
-    </select></label>`;
+    return project().setlists.map(item => `<option value="${esc(item.id)}"${item.id === current.id ? " selected" : ""}>${esc(item.name)}</option>`).join("");
+  }
+
+  function setSelect() {
+    return `<label class="field-label">Settliste<select data-control="setlist">${setOptions()}</select></label>`;
+  }
+
+  function updateSetlistOptions(scope) {
+    const select = scope.querySelector('[data-control="setlist"]');
+    if (select) select.innerHTML = setOptions();
   }
 
   function pageHead(kicker, title, description, action = "") {
@@ -726,7 +796,7 @@
     const current = song(item.songId);
     const label = pause ? item.label : current.title;
     const done = run.done.includes(item.entryId);
-    const metadata = pause ? "Pause i settlista" : [current.artist, current.bpm ? `${current.bpm} BPM` : "", M.startCue(current.start)?.label].filter(Boolean).join(" · ");
+    const metadata = pause ? "Pause i settlisten" : [current.artist, current.bpm ? `${current.bpm} BPM` : "", M.startCue(current.start)?.label].filter(Boolean).join(" · ");
     return `<li class="setlist-item ${item.entryId === activeId ? "is-active" : ""} ${done ? "is-done" : ""} ${pause ? "is-pause" : ""}">
       <button type="button" class="list-button" data-action="pick-fixed" ${idData(item.entryId)} aria-label="${esc(`Vis ${label} på scenen`)}">
         <span class="queue-index" aria-hidden="true">${iconOrNumber(done, pause, index)}</span>
@@ -745,36 +815,42 @@
   }
 
   function renderSetlists() {
-    const { set, run, active } = fixedSelection();
-    const total = set.items.filter(item => item.type === "song").length;
-    const headerAction = set.items.length ? button("use-setlist", "Vis på scenen", { symbol: "play", style: "primary" }) : "";
-    $("view").innerHTML = `${pageHead("Før konserten", "Settlister", "Bygg spillekøen og legg inn pauser der de hører hjemme.", headerAction)}
+    $("view").innerHTML = `<div id="setlist-head"></div>
       <section class="panel" aria-labelledby="pick-setlist">
         <div class="section-heading"><h2 id="pick-setlist">Velg settliste</h2></div>
         <div class="list-toolbar">${projectSelect()}${setSelect()}</div>
         <div class="button-group setlist-actions">
           ${button("new-list", "Ny settliste", { symbol: "plus", style: "quiet" })}
           ${button("rename-list", "Gi nytt navn", { symbol: "edit", style: "quiet" })}
-          ${set.items.length ? button("clear-list", "Tøm liste", { style: "quiet" }) : ""}
+          ${button("clear-list", "Tøm liste", { style: "quiet", data: 'id="setlist-clear"' })}
         </div>
       </section>
-      <section class="panel" aria-labelledby="ordered-list">
-        <div class="section-heading"><div><p class="eyebrow">${total} ${total === 1 ? "låt" : "låter"} i spillekøen</p><h2 id="ordered-list">${esc(set.name)}</h2></div>
+      <section class="panel" id="setlist-content" aria-labelledby="ordered-list"></section>`;
+    renderSetlistContent();
+  }
+
+  function renderSetlistContent() {
+    const { set, run, active } = fixedSelection();
+    const total = set.items.filter(item => item.type === "song").length;
+    const headerAction = set.items.length ? button("use-setlist", "Vis på scenen", { symbol: "play", style: "primary" }) : "";
+    $("setlist-head").innerHTML = pageHead("Før konserten", "Settlister", "Bygg spillekøen og legg inn pauser der de hører hjemme.", headerAction);
+    $("setlist-clear").hidden = !set.items.length;
+    $("setlist-content").innerHTML = `<div class="section-heading"><div><p class="eyebrow">${total} ${total === 1 ? "låt" : "låter"} i spillekøen</p><h2 id="ordered-list">${esc(set.name)}</h2></div>
           <div class="button-group">
             ${button("add-song", "Legg til låt", { symbol: "plus", style: "primary", disabled: !projectSongs().length })}
             ${button("add-pause", "Legg til pause", { symbol: "pause", style: "quiet" })}
           </div>
         </div>
         ${set.items.length ? `<ol class="setlist-items">${set.items.map((item, i) => setlistItem(item, i, set, run, active?.entryId)).join("")}</ol>`
-          : empty(projectSongs().length ? "Legg til den første låta. Du kan flytte låter og pauser med pilknappene." : "Prosjektet har ingen låter. Legg til låter fra repertoarredigeringen.")}
-      </section>`;
+          : empty(projectSongs().length ? "Legg til den første låten. Du kan flytte låter og pauser med pilknappene." : "Prosjektet har ingen låter. Legg til låter fra repertoarredigeringen.")}`;
   }
 
-  function searchInput(id, label, value = "", placeholder = "Søk på låt, artist, tempo eller notat") {
-    return `<div class="search-field">${icon("search")}
-      <label class="sr-only" for="${id}">${label}</label>
-      <input id="${id}" type="search" value="${esc(value)}" placeholder="${placeholder}" autocomplete="off">
+  function searchInput(id, label, value = "", { showLabel = false } = {}) {
+    const field = `<div class="search-field">${icon("search")}
+      ${showLabel ? "" : `<label class="sr-only" for="${id}">${label}</label>`}
+      <input id="${id}" type="search" value="${esc(value)}" placeholder="${showLabel ? "Låt, artist, BPM …" : "Søk på låt, artist, tempo eller notat"}" autocomplete="off">
     </div>`;
+    return showLabel ? `<div class="field-label"><label for="${id}">${label}</label>${field}</div>` : field;
   }
 
   const fixedFilters = [
@@ -823,16 +899,21 @@
   }
 
   function renderLibrary() {
-    const recent = session().history.slice(-5).reverse().map(song).filter(Boolean);
-    $("view").innerHTML = `${pageHead("Låtboka", "Repertoar", "Finn en låt, se spillenotatene eller sjekk hva som er spilt.", link("editor", "Rediger repertoar", "edit", "quiet"))}
+    $("view").innerHTML = `${pageHead("Låtboken", "Repertoar", "Finn en låt, se spillenotatene eller sjekk hva som er spilt.", link("editor", "Rediger repertoar", "edit", "quiet"))}
       <div class="panel">
-        <div class="search-tools">${searchInput("library-search", "Søk i repertoaret", libraryQuery)}${projectSelect()}</div>
-        <div class="chips" aria-label="Filtrer repertoaret">${libraryFilters().map(([key, label]) =>
+        <div class="search-tools">${searchInput("library-search", "Søk", libraryQuery, { showLabel: true })}${projectSelect()}</div>
+        <div id="library-content"></div>
+      </div>`;
+    renderLibraryContent();
+  }
+
+  function renderLibraryContent() {
+    const recent = session().history.slice(-5).reverse().map(song).filter(Boolean);
+    $("library-content").innerHTML = `<div class="chips" aria-label="Filtrer repertoaret">${libraryFilters().map(([key, label]) =>
           button("filter", label, { style: "chip quiet", data: `${idData(key)} ${pressed(filter === key)}` })).join("")}</div>
         <div class="section-heading"><h2>Låter</h2><span class="section-count" id="library-count" role="status"></span></div>
         <div id="library-results"></div>
-        ${recent.length ? `<details class="recent-fold"><summary>Sist spilt</summary><ul class="flat-list">${recent.map(item => `<li>${button("song-detail", item.title, { symbol: "music", style: "quiet", data: idData(item.id) })}</li>`).join("")}</ul></details>` : ""}
-      </div>`;
+        ${recent.length ? `<details class="recent-fold"><summary>Sist spilt</summary><ul class="flat-list">${recent.map(item => `<li>${button("song-detail", item.title, { symbol: "music", style: "quiet", data: idData(item.id) })}</li>`).join("")}</ul></details>` : ""}`;
     renderLibraryList();
   }
 
@@ -871,8 +952,8 @@
   function nameDialog(kind) {
     const isPause = kind === "pause";
     const isRename = kind === "rename";
-    const title = isPause ? "Legg til pause" : isRename ? "Gi settlista nytt navn" : "Ny settliste";
-    const label = isPause ? "Navn på pausen" : "Navn på settlista";
+    const title = isPause ? "Legg til pause" : isRename ? "Gi settlisten nytt navn" : "Ny settliste";
+    const label = isPause ? "Navn på pausen" : "Navn på settlisten";
     const value = isPause ? "Settpause" : isRename ? setlist().name : "";
     openDialog(title, `<form id="name-form">
       <label class="field-label">${label}<input id="name-value" required maxlength="100" value="${esc(value)}"></label>
@@ -898,7 +979,7 @@
       reviewId = null;
       closeDialog();
       render();
-      notify(isPause ? "Pause lagt til" : "Settlista er lagret", { canUndo: true });
+      notify(isPause ? "Pause lagt til" : "Settlisten er lagret", { canUndo: true });
     };
   }
 
@@ -922,7 +1003,7 @@
     render();
     if (remove) {
       document.querySelector('[data-action="add-song"]')?.focus({ preventScroll: true });
-      notify("Fjernet fra settlista", { canUndo: true });
+      notify("Fjernet fra settlisten", { canUndo: true });
     } else {
       const control = document.querySelector(`[data-action="${action}"][data-id="${CSS.escape(id)}"]:not(:disabled)`)
         || document.querySelector(`[data-action="pick-fixed"][data-id="${CSS.escape(id)}"]`);
@@ -932,7 +1013,7 @@
   }
 
   function clearList() {
-    confirmDialog("Tøm settlista?", `Alle låter og pauser fjernes fra «${setlist().name}». Låtene blir værende i repertoaret.`, "Tøm settlista", () => {
+    confirmDialog("Tøm settlisten?", `Alle låter og pauser fjernes fra «${setlist().name}». Låtene blir værende i repertoaret.`, "Tøm settlisten", () => {
       if (!commit(next => {
         setlist(next).items = [];
         delete next.state.setRuns[project(next).id]?.[setlist(next).id];
@@ -940,7 +1021,7 @@
       }, "Tøm settliste")) return false;
       reviewId = null;
       render();
-      notify("Settlista er tømt", { canUndo: true });
+      notify("Settlisten er tømt", { canUndo: true });
       return true;
     }, "danger");
   }
@@ -957,9 +1038,9 @@
   function showFind(kind) {
     const add = kind === "add";
     const fixed = !add && model.settings.mode === "fixed";
-    const title = add ? "Legg låter i settlista" : fixed ? "Finn låt i settlista" : "Finn låt i repertoaret";
+    const title = add ? "Legg låter i settlisten" : fixed ? "Finn låt i settlisten" : "Finn låt i repertoaret";
     const subtitle = add ? `Trykk på en låt for å legge den til i «${setlist().name}».`
-      : fixed ? "Velg låta du vil hente opp på scenen." : `Søk i repertoaret til ${project().name}.`;
+      : fixed ? "Velg låten du vil hente opp på scenen." : `Søk i repertoaret til ${project().name}.`;
     openDialog(title, `<p class="help-text">${esc(subtitle)}</p>
       <form id="find-form">${searchInput("find-input", title)}</form><div id="find-results" class="dialog-search-results"></div>`, "find", "find-input");
 
@@ -978,7 +1059,7 @@
       } else {
         markup = M.songSearch(projectSongs(), query).map(item => {
           const copies = add ? setlist().items.filter(row => row.songId === item.id).length : 0;
-          const meta = [item.artist, M.startCue(item.start)?.label, copies ? `I lista × ${copies}` : "",
+          const meta = [item.artist, M.startCue(item.start)?.label, copies ? `I listen × ${copies}` : "",
             !add && session().played.includes(item.id) ? "Spilt" : ""].filter(Boolean).join(" · ");
           return findRow(item, add ? "add-song-result" : "pick-free", item.id, meta);
         });
@@ -1026,7 +1107,7 @@
     openDialog(item.title, `<p class="song-artist">${esc(item.artist)}</p>
       <div class="signal-grid">${cueMarkup(item)}
         <div class="signal"><span class="eyebrow">${icon("pulse")} Tempo</span><strong>${item.bpm ? `${item.bpm} BPM` : "– BPM"}</strong></div></div>
-      <div class="notes-body">${notesMarkup(item)}</div>${tagsMarkup(item)}
+      ${notesPanel(item)}${tagsMarkup(item)}
       <div class="dialog-actions">
         ${played ? button("restore-song", "Sett som uspilt", { symbol: "undo", style: "quiet", data: idData(item.id) }) : ""}
         ${stageAction}
@@ -1245,6 +1326,7 @@
   }
 
   function renderEditor() {
+    const toolsOpen = $("view").querySelector(".editor-tools")?.open;
     $("view").innerHTML = `${pageHead("Repertoar", "Rediger repertoar", "Vedlikehold låter, startsignaler, notater og bandprosjekter.", link("repertoar", "Til repertoaret", "arrowLeft", "quiet"))}
       ${model.dirty ? '<p class="draft-banner help-text">Lokale endringer er tilgjengelige på denne enheten. Eksporter JSON-filene for å publisere dem.</p>' : ""}
       <section class="panel" aria-label="Låter og prosjekter">
@@ -1258,25 +1340,48 @@
             ${button("edit-project", "Nytt prosjekt", { symbol: "plus", style: "quiet" })}
           </div>
         </div>
-        <div class="search-tools">${searchInput("editor-search", "Søk i redigeringen", editorQuery)}${editorTab === "songs" ? projectSelect("Prosjekt", { editor: true }) : ""}</div>
+        <div class="search-tools">${searchInput("editor-search", "Søk", editorQuery, { showLabel: true })}${editorTab === "songs" ? projectSelect("Prosjekt", { editor: true }) : ""}</div>
         <div class="section-heading"><h2>${editorTab === "songs" ? "Låter" : "Prosjekter"}</h2><span class="section-count" id="editor-count" role="status"></span></div>
         <div id="editor-results"></div>
       </section>
-      <details class="panel editor-tools">
-        <summary>Import, eksport og publiserte data</summary>
-        <p class="help-text">Eksporter <code>songs.json</code> og <code>projects.json</code> når du vil publisere dataene sammen med appen.</p>
-        <div class="button-group">
-          ${button("export-data", "Eksporter alt", { data: idData("all") })}
-          ${button("export-data", "Eksporter songs.json", { data: idData("songs"), style: "quiet" })}
-          ${button("export-data", "Eksporter projects.json", { data: idData("projects"), style: "quiet" })}
-          ${filePick("all", "Importer alt")}
-          ${filePick("songs", "Importer songs.json")}
-          ${filePick("projects", "Importer projects.json")}
-          ${button("reload-data", "Hent publiserte data", { symbol: "refresh", style: "quiet", disabled: standalone })}
-          ${button("discard-draft", "Forkast lokalt utkast", { style: "danger", disabled: !model.dirty })}
+      <details class="panel editor-tools" ${toolsOpen ? "open" : ""}>
+        <summary>
+          <span class="editor-tools-icon">${icon("folder")}</span>
+          <span>Import, eksport og publiserte data</span>
+          ${icon("chevronDown")}
+        </summary>
+        <div class="editor-tools-content">
+          <section class="editor-tools-group">
+            <h3>Eksport</h3>
+            <p class="help-text">Last ned <code>songs.json</code> og <code>projects.json</code> for å publisere dataene.</p>
+            <div class="button-group">
+              ${button("export-data", "Eksporter alt", { data: idData("all") })}
+              ${button("export-data", "Eksporter songs.json", { data: idData("songs"), style: "quiet" })}
+              ${button("export-data", "Eksporter projects.json", { data: idData("projects"), style: "quiet" })}
+            </div>
+          </section>
+          <section class="editor-tools-group">
+            <h3>Import</h3>
+            <div class="button-group">
+              ${filePick("all", "Importer alt")}
+              ${filePick("songs", "Importer songs.json")}
+              ${filePick("projects", "Importer projects.json")}
+            </div>
+          </section>
+          <section class="editor-tools-group">
+            <h3>Publisert versjon og utkast</h3>
+            <div class="button-group">
+              ${button("reload-data", "Hent publiserte data", { symbol: "refresh", style: "quiet", disabled: standalone })}
+              ${button("discard-draft", "Forkast lokalt utkast", { style: "danger", disabled: !model.dirty })}
+            </div>
+          </section>
         </div>
       </details>`;
     renderEditorList();
+  }
+
+  function cueInputs(cues, prefix = "") {
+    return M.cueFields.map(([key, label]) => `<label class="field-label">${label}<textarea name="${prefix}${key}" rows="2">${esc(cues?.[key])}</textarea></label>`).join("");
   }
 
   function songForm(id) {
@@ -1298,11 +1403,15 @@
         <fieldset class="checkbox-group wide"><legend>Prosjekter</legend>
           ${model.projects.map(p => `<label><input type="checkbox" name="member" value="${esc(p.id)}"${check(selected.includes(p.id))}> ${esc(p.name)}</label>`).join("")}
         </fieldset>
-        <label class="field-label wide">Spillenotat<textarea name="notes" rows="4">${esc(item?.notes)}</textarea></label>
+        <label class="field-label wide">Spillenotat for trommesett<textarea name="notes" rows="4">${esc(item?.notes)}</textarea></label>
         <details class="editor-cues wide" ${item?.cues ? "open" : ""}>
-          <summary>Del inn i Inn, Underveis og Avslutning</summary>
-          <p class="help-text">Fyll ut feltene du vil vise som egne blokker på scenen.</p>
-          ${M.cueFields.map(([field, label]) => `<label class="field-label">${label}<textarea name="${field}" rows="2">${esc(item?.cues?.[field])}</textarea></label>`).join("")}
+          <summary>Inn, underveis og avslutning for trommesett</summary>
+          ${cueInputs(item?.cues)}
+        </details>
+        <details class="editor-cues wide" ${item?.percussionNotes || item?.percussionCues ? "open" : ""}>
+          <summary>Perkusjonsnotater</summary>
+          <label class="field-label">Spillenotat for perkusjon<textarea name="percussionNotes" rows="4">${esc(item?.percussionNotes)}</textarea></label>
+          ${cueInputs(item?.percussionCues, "percussion-")}
         </details>
       </div>
       <div class="dialog-actions">
@@ -1319,15 +1428,20 @@
       const artist = field("artist");
       if (!title || !artist) return formError("Fyll inn tittel og artist.");
       const bpm = field("bpm");
-      const cues = Object.fromEntries(M.cueFields.map(([key]) => [key, field(key)]).filter(([, value]) => value));
       const nextSong = {
         ...item, id: item?.id || M.uniqueSlug(`${title} ${artist}`, new Set(model.songs.map(item => item.id))),
         title, artist, bpm: bpm ? Number(bpm) : null, start: field("start"), energy: field("energy"),
         tags: [...new Set(field("tags").split(",").map(tag => tag.trim().toLocaleLowerCase("nb")).filter(Boolean))],
         projects: fields.getAll("member"), notes: field("notes")
       };
-      if (Object.keys(cues).length) nextSong.cues = cues;
-      else delete nextSong.cues;
+      for (const [name, prefix] of [["cues", ""], ["percussionCues", "percussion-"]]) {
+        const cues = Object.fromEntries(M.cueFields.map(([key]) => [key, field(prefix + key)]).filter(([, value]) => value));
+        if (Object.keys(cues).length) nextSong[name] = cues;
+        else delete nextSong[name];
+      }
+      const percussionNotes = field("percussionNotes");
+      if (percussionNotes) nextSong.percussionNotes = percussionNotes;
+      else delete nextSong.percussionNotes;
       if (!commit(next => {
         const index = next.songs.findIndex(item => item.id === nextSong.id);
         if (index < 0) next.songs.push(nextSong);
@@ -1337,14 +1451,14 @@
       suggestions = null;
       closeDialog();
       render();
-      notify("Låta er lagret lokalt", { canUndo: true });
+      notify("Låten er lagret lokalt", { canUndo: true });
     };
   }
 
   function deleteSong(id) {
     const item = song(id);
     if (!item) return;
-    confirmDialog("Slett låta?", `«${item.title}» fjernes fra repertoaret og alle settlister der den står.`, "Slett låt", () => {
+    confirmDialog("Slett låten?", `«${item.title}» fjernes fra repertoaret og alle settlister der den står.`, "Slett låt", () => {
       if (!commit(next => {
         next.songs = next.songs.filter(item => item.id !== id);
         for (const p of next.projects) {
@@ -1362,7 +1476,7 @@
       }, "Slett låt")) return false;
       suggestions = null;
       render();
-      notify("Låta er slettet", { canUndo: true });
+      notify("Låten er slettet", { canUndo: true });
       return true;
     }, "danger");
   }
@@ -1579,8 +1693,14 @@
 
   function setSetting(key, value) {
     if (!Object.hasOwn(model.settings, key)) return;
+    if (model.settings[key] === value) return true;
     if (!commit(next => { next.settings[key] = value; })) return false;
-    render();
+    if (key === "pulseHalf" || key === "pulseAccent") {
+      if (activeView() === "scene") updateStageMetronome(stageState().song);
+    } else if (key === "sceneNotesVisible") updateStageNotesVisibility();
+    else if (key === "noteMode") updateNoteMode();
+    else if (key === "theme") applyTheme();
+    else render();
     return true;
   }
 
@@ -1609,22 +1729,19 @@
     favorite: toggleFavorite,
     filter(id) { filter = id; renderLibraryList(); },
     suggest() { suggestions = null; render(); announce("Nye låtforslag er klare"); },
-    notes() {
-      if (setSetting("sceneNotesVisible", !model.settings.sceneNotesVisible)) {
-        document.querySelector('[data-action="notes"]')?.focus({ preventScroll: true });
-      }
+    notes() { setSetting("sceneNotesVisible", !model.settings.sceneNotesVisible); },
+    "note-mode"(id) {
+      if (Object.hasOwn(noteModes, id)) setSetting("noteMode", id);
     },
     pulse() {
-      if (!stageState().song?.bpm) return;
+      const item = stageState().song;
+      if (!item?.bpm) return;
       pulseEnabled = !pulseEnabled;
-      render();
-      document.querySelector('[data-action="pulse"]')?.focus({ preventScroll: true });
+      updateStageMetronome(item);
     },
     "half-tempo"() {
       if (!stageState().song?.bpm) return;
-      if (setSetting("pulseHalf", !model.settings.pulseHalf)) {
-        document.querySelector('[data-action="half-tempo"]')?.focus({ preventScroll: true });
-      }
+      setSetting("pulseHalf", !model.settings.pulseHalf);
     },
     undo: undoLast,
     "new-set": newSetAction,
@@ -1685,15 +1802,10 @@
       }
       switch (control.dataset.control) {
         case "project":
-          changeProject(control.value);
-          if (modalType === "context") {
-            showContext();
-            modal.querySelector('[data-control="project"]')?.focus();
-          } else document.querySelector('[data-control="project"]')?.focus({ preventScroll: true });
+          if (!changeProject(control.value)) control.value = project().id;
           break;
         case "setlist":
-          changeSetlist(control.value);
-          if (!modal.open) document.querySelector('[data-control="setlist"]')?.focus({ preventScroll: true });
+          if (!changeSetlist(control.value)) control.value = setlist().id;
           break;
         case "editor-project":
           if (commit(next => { next.editorProject = control.value; })) {

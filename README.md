@@ -6,15 +6,17 @@ Trommeark og settlister for livebruk. Pakken inneholder de 46 låtene fra Gig-se
 
 1. Åpne **Settlister**, velg prosjekt og settliste, og legg inn låtene i spille­rekkefølge. Du kan legge inn pauser og spille samme låt flere ganger.
 2. Åpne **På scenen**. Første låt vises med startsignal, tempo og spillenotater.
-3. Bruk **Spilt · neste** nederst. Hvis settlista har en pause, blir pausen stående til du velger **Fortsett etter pause**. **Forrige** viser låta igjen og lar deg gå tilbake til den aktive plassen. **Angre** ligger i meldingen etter at du markerer en låt, og i **Innstillinger**.
+3. Bruk **Spilt · neste** nederst. Hvis settlisten har en pause, blir pausen stående til du velger **Fortsett etter pause**. **Forrige** viser låten igjen og lar deg gå tilbake til den aktive plassen. **Angre** ligger i meldingen etter at du markerer en låt, og i **Innstillinger**.
 4. Trykk på prosjektet øverst på scenen for å bytte til **Frie forslag**. De tre forslagene tar hensyn til favoritter og de fem siste låtene, med variasjon i artist, tempo, energi og merkelapper.
 5. Trykk på BPM-feltet for å starte eller stoppe pulsen. **Halvtempo** halverer BPM med ett trykk og gjelder til du slår det av. 4/4-aksent, skjermlås, lys/mørk visning og automatisk neste ligger i **Innstillinger**.
 
-**Repertoar** har søk og filtre for blant annet spilte låter, favoritter, tempo og «Tell opp». I **Rediger repertoar** kan du endre rånotatet eller bruke egne felt for **Inn**, **Underveis** og **Avslutning**. Redigeringen lagres på denne enheten.
+Velg **Trommesett** eller **Perkusjon** ved spillenotatene på scenen. Appen husker valget når du går videre til neste låt. Bruk **Rediger repertoar** til å legge inn egne notater for hvert instrument, med valgfrie felt for **Inn**, **Underveis** og **Avslutning**. I `songs.json` ligger trommesettnotater i `notes` og `cues`. Perkusjon bruker `percussionNotes` og `percussionCues`. Redigeringen lagres på denne enheten.
+
+**Repertoar** har søk og filtre for blant annet spilte låter, favoritter, tempo og «Tell opp». Søket finner notater for begge instrumentene.
 
 ## Prøv lokalt
 
-Pakk ut ZIP-fila. Kjør denne kommandoen i mappa med `index.html`.
+Pakk ut ZIP-filen. Kjør denne kommandoen i mappen med `index.html`.
 
 ```sh
 python3 -m http.server 8080
