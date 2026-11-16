@@ -284,12 +284,8 @@
     } else location.hash = hash;
   }
 
-  function pageScroller() {
-    return matchMedia("(display-mode: standalone)").matches ? $("content") : window;
-  }
-
   function stageTop(focus = false) {
-    pageScroller().scrollTo({ top: 0, behavior: "auto" });
+    window.scrollTo({ top: 0, behavior: "auto" });
     if (focus) $("stage-title")?.focus({ preventScroll: true });
   }
 
@@ -298,9 +294,7 @@
     const lights = $("stage-pulse-dots");
     if (!card || !lights) return;
 
-    const scroller = pageScroller();
-    const viewportTop = scroller === window ? 0 : scroller.getBoundingClientRect().top;
-    const scrollTop = scroller === window ? window.scrollY : scroller.scrollTop;
+    const viewportTop = Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 12;
     const dock = $("dock");
     const viewportBottom = dock.hidden ? window.innerHeight : dock.getBoundingClientRect().top;
     const pulse = lights.getBoundingClientRect();
@@ -310,9 +304,9 @@
     const readingBottom = note ? Math.min(note.bottom, note.top + 48) : pulse.bottom;
     const cardTop = card.getBoundingClientRect().top - viewportTop;
     const pulseTop = pulse.top - viewportTop;
-    const offset = Math.min(pulseTop - 12, Math.max(cardTop - 12, readingBottom - viewportBottom + 12));
+    const offset = Math.min(pulseTop, Math.max(cardTop, readingBottom - viewportBottom + 12));
     const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
-    scroller.scrollTo({ top: Math.max(0, scrollTop + offset), behavior });
+    window.scrollTo({ top: Math.max(0, window.scrollY + offset), behavior });
   }
 
   function setMode(mode) {
