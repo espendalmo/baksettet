@@ -79,7 +79,63 @@
       {
         "id": "standard",
         "name": "Standard",
-        "items": []
+        "items": [
+          {
+            "type": "song",
+            "songId": "so-many-roads-joe-bonamassa",
+            "entryId": "song-f7fbb3a7-dc9f-41b8-87cf-9eddd2126838"
+          },
+          {
+            "type": "song",
+            "songId": "drive-joe-bonamassa",
+            "entryId": "song-52229ce7-291c-4d45-b04a-0dd9225377f5"
+          },
+          {
+            "type": "song",
+            "songId": "different-shades-of-blue-joe-bonamassa",
+            "entryId": "song-b0e06799-d914-4042-ad17-cbf160f2ab5a"
+          },
+          {
+            "type": "song",
+            "songId": "driving-towards-the-daylight-joe-bonamassa",
+            "entryId": "song-7cc59203-3efc-4ada-bd21-2da87cc62acb"
+          },
+          {
+            "type": "song",
+            "songId": "just-cos-you-can-don-t-mean-you-should-joe-bonamassa",
+            "entryId": "song-eefe560b-cf83-41fa-87a0-4c195244f50b"
+          },
+          {
+            "type": "song",
+            "songId": "i-know-where-i-belong-joe-bonamassa",
+            "entryId": "song-7c79bb3e-a4b6-416d-875c-f34a9a0a263c"
+          },
+          {
+            "type": "song",
+            "songId": "no-good-place-for-the-lonely-joe-bonamassa",
+            "entryId": "song-223247c3-9d97-4678-980b-785fcb95f1a5"
+          },
+          {
+            "type": "song",
+            "songId": "self-inflicted-wounds-joe-bonamassa",
+            "entryId": "song-c5cb5519-6cfc-4581-ba0f-5a43a3b9c5bb"
+          },
+          {
+            "type": "song",
+            "songId": "sloe-gin-joe-bonamassa",
+            "entryId": "song-a773e711-5628-41a6-a5e6-1d2e4e12f2ff"
+          },
+          {
+            "type": "song",
+            "songId": "i-ll-play-the-blues-for-you-joe-bonamassa",
+            "entryId": "song-1c2ae862-e031-4cd0-b382-1dc016311f89"
+          },
+          {
+            "type": "song",
+            "songId": "living-on-the-moon-joe-bonamassa",
+            "entryId": "song-0b8841d2-27dd-478f-9caf-dd3abb1a276a"
+          }
+        ]
       }
     ]
   }

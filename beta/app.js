@@ -78,6 +78,8 @@
   let pulseKey = null;
   let pulseTimer = null;
   let pulseBeat = -1;
+  let pulseDotsId = null;
+  let previewPlaying = false;
   let lastAdvance = -Infinity;
   let filter = "all";
   let libraryQuery = "";
@@ -594,6 +596,14 @@
     </div>`;
   }
 
+  function pulseDots(id, hidden = false) {
+    return `<div class="pulse-dots" id="${id}" aria-hidden="true"${hidden ? " hidden" : ""}><i></i><i></i><i></i><i></i></div>`;
+  }
+
+  function formatTempo(bpm) {
+    return bpm.toLocaleString("nb", { maximumFractionDigits: 3, useGrouping: false });
+  }
+
   function tempoMarkup(item) {
     if (!item.bpm) {
       return `<div class="signal"><span class="eyebrow">${icon("pulse")} Tempo</span><strong>– BPM</strong></div>`;
@@ -606,13 +616,13 @@
     <button class="signal half-tempo" id="stage-half-tempo" data-action="half-tempo" type="button">
       <span>Halvtempo</span><span class="tempo-status" id="stage-half-status" aria-hidden="true"></span>
     </button>
-    <div class="pulse-dots" id="stage-pulse-dots" aria-hidden="true" hidden><i></i><i></i><i></i><i></i></div>`;
+    ${pulseDots("stage-pulse-dots", true)}`;
   }
 
   function updateStageMetronome(item) {
     if (item?.bpm) {
       const half = model.settings.pulseHalf;
-      const bpm = (half ? item.bpm / 2 : item.bpm).toLocaleString("nb", { maximumFractionDigits: 3, useGrouping: false });
+      const bpm = formatTempo(half ? item.bpm / 2 : item.bpm);
       const control = $("stage-pulse");
       control.setAttribute("aria-pressed", String(pulseEnabled));
       control.setAttribute("aria-label", `${pulseEnabled ? "Stopp" : "Start"} visuell puls · ${bpm} BPM`);
@@ -623,6 +633,49 @@
       $("stage-pulse-dots").hidden = !pulseEnabled;
     }
     syncPulse(item);
+  }
+
+  function previewMetronome(bpm, editable = false) {
+    const tempo = editable ? `<div class="field-label">
+      <label for="edit-bpm">Tempo (BPM)</label>
+      <div class="tempo-stepper">
+        ${iconButton("step-bpm", "Senk tempoet med 1 BPM", "down", { data: idData(-1) })}
+        <input id="edit-bpm" name="bpm" type="number" min="1" max="400" step="any" inputmode="decimal" value="${bpm ?? ""}" placeholder="120">
+        ${iconButton("step-bpm", "Øk tempoet med 1 BPM", "up", { data: idData(1) })}
+      </div>
+    </div>` : `<div class="tempo-readout"><strong>${bpm ? formatTempo(bpm) : "–"}</strong><small>BPM</small></div>`;
+    const disabled = !bpm || (editable && (bpm < 1 || bpm > 400));
+    return `<div class="metronome-preview${editable ? " wide" : ""}" role="group" aria-label="Metronom">
+      <div class="metronome-controls">
+        ${tempo}
+        <button class="button" type="button" id="preview-pulse" data-action="preview-pulse" data-bpm="${bpm ?? ""}" ${pressed(false)}${disabled ? " disabled" : ""}>
+          ${icon("pulse")}<span id="preview-pulse-label">Start metronom</span>
+        </button>
+      </div>
+      ${pulseDots("preview-pulse-dots")}
+    </div>`;
+  }
+
+  function previewBpm() {
+    if (modalType !== "edit-song") return Number($("preview-pulse").dataset.bpm);
+    const input = $("edit-bpm");
+    return input.validity.valid ? input.valueAsNumber : null;
+  }
+
+  function updatePreviewMetronome() {
+    const control = $("preview-pulse");
+    control.disabled = !previewPlaying && !previewBpm();
+    control.setAttribute("aria-pressed", String(previewPlaying));
+    $("preview-pulse-label").textContent = previewPlaying ? "Stopp metronom" : "Start metronom";
+    syncPulse();
+  }
+
+  function stepEditorTempo(change) {
+    const input = $("edit-bpm");
+    const bpm = input.valueAsNumber;
+    const next = Number.isFinite(bpm) ? bpm + change : 120;
+    input.value = String(Math.min(Number(input.max), Math.max(Number(input.min), next)));
+    updatePreviewMetronome();
   }
 
   const drumPattern = `<svg class="hero-pattern" viewBox="0 0 350 300" fill="none" aria-hidden="true">
@@ -948,16 +1001,20 @@
   function openDialog(title, content, type, focusId) {
     if (!modal.open) modalOpener = document.activeElement;
     modalType = type;
+    previewPlaying = false;
     $("modal-title").textContent = title;
     $("modal-content").innerHTML = `<div class="modal-content">${content}<p class="form-error" id="dialog-message" role="status"></p></div>`;
     if (!modal.open) modal.showModal();
+    syncPulse();
     modal.scrollTop = 0;
     const focus = focusId ? $(focusId) : modal.querySelector(".modal-header button");
     focus?.focus();
   }
 
   function closeDialog() {
-    if (modal.open) modal.close();
+    if (!modal.open) return;
+    modal.close();
+    syncPulse();
   }
 
   function formError(message) {
@@ -1140,8 +1197,7 @@
       : item.projects.includes(project().id)
         ? button("pick-free", model.settings.mode === "fixed" ? "Vis med frie forslag" : "Vis på scenen", { style: "primary", symbol: "play", data: idData(item.id) }) : "";
     openDialog(item.title, `<p class="song-artist">${esc(item.artist)}</p>
-      <div class="signal-grid">${cueMarkup(item)}
-        <div class="signal"><span class="eyebrow">${icon("pulse")} Tempo</span><strong>${item.bpm ? `${item.bpm} BPM` : "– BPM"}</strong></div></div>
+      <div class="signal-grid song-detail-signals">${cueMarkup(item)}${previewMetronome(item.bpm)}</div>
       ${notesPanel(item)}${tagsMarkup(item)}
       <div class="dialog-actions">
         ${played ? button("restore-song", "Sett som uspilt", { symbol: "undo", style: "quiet", data: idData(item.id) }) : ""}
@@ -1244,7 +1300,7 @@
     else {
       $("dock").hidden = true;
       root.classList.remove("has-dock");
-      stopPulse();
+      syncPulse(null);
       if (view === "settlister") renderSetlists();
       else if (view === "repertoar") renderLibrary();
       else renderEditor();
@@ -1259,30 +1315,38 @@
     pulseKey = null;
     pulseBeat = -1;
     paintPulse();
+    pulseDotsId = null;
   }
 
   function paintPulse() {
-    $("view").querySelectorAll(".pulse-dots i").forEach((dot, index) => {
+    if (!pulseDotsId) return;
+    $(pulseDotsId)?.querySelectorAll("i").forEach((dot, index) => {
       const active = index === pulseBeat;
       dot.classList.toggle("beat", active);
       dot.classList.toggle("downbeat", active && index === 0 && model.settings.pulseAccent);
     });
   }
 
-  function syncPulse(item) {
-    if (!pulseEnabled || !item?.bpm || document.visibilityState === "hidden") return stopPulse();
+  function syncPulse(item = activeView() === "scene" ? stageState().song : null) {
+    const preview = modal.open && previewPlaying;
+    if ((!preview && !pulseEnabled) || document.visibilityState === "hidden") return stopPulse();
     const { pulseHalf, pulseAccent } = model.settings;
-    const key = [item.id, item.bpm, pulseHalf, pulseAccent].join(":");
+    const bpm = preview ? previewBpm() : (item?.bpm ?? 0) / (pulseHalf ? 2 : 1);
+    if (!bpm) return stopPulse();
+    const dotsId = preview ? "preview-pulse-dots" : "stage-pulse-dots";
+    const key = [dotsId, preview ? "" : item.id, bpm, pulseAccent].join(":");
     if (key === pulseKey) return paintPulse();
-    stopPulse();
+    const keepBeat = preview && pulseDotsId === dotsId;
+    if (keepBeat) clearInterval(pulseTimer);
+    else stopPulse();
+    pulseDotsId = dotsId;
     pulseKey = key;
-    const interval = 60000 / (pulseHalf ? item.bpm / 2 : item.bpm);
     const tick = () => {
       pulseBeat = (pulseBeat + 1) % 4;
       paintPulse();
     };
-    tick();
-    pulseTimer = setInterval(tick, interval);
+    if (!keepBeat) tick();
+    pulseTimer = setInterval(tick, 60000 / bpm);
   }
 
   function updateWakeUI() {
@@ -1430,11 +1494,11 @@
       <div class="field-grid">
         <label class="field-label">Tittel<input name="title" id="edit-title" required maxlength="160" value="${esc(item?.title)}"></label>
         <label class="field-label">Artist<input name="artist" required maxlength="160" value="${esc(item?.artist)}"></label>
+        ${previewMetronome(item?.bpm, true)}
         <label class="field-label">Startsignal<input name="start" list="cue-types" maxlength="100" value="${esc(item?.start)}" placeholder="F.eks. Tell opp">
           <datalist id="cue-types">${cueOptions}</datalist></label>
-        <label class="field-label">Tempo (BPM)<input name="bpm" type="number" min="1" max="400" step="any" value="${item?.bpm ?? ""}"></label>
         <label class="field-label">Energi<select name="energy">${energyOptions.map(value => `<option${value === energy ? " selected" : ""}>${esc(value)}</option>`).join("")}</select></label>
-        <label class="field-label">Merkelapper<input name="tags" value="${esc(item?.tags.join(", "))}" placeholder="rock, dans, blues"></label>
+        <label class="field-label wide">Merkelapper<input name="tags" value="${esc(item?.tags.join(", "))}" placeholder="rock, dans, blues"></label>
         <fieldset class="checkbox-group wide"><legend>Prosjekter</legend>
           ${model.projects.map(p => `<label><input type="checkbox" name="member" value="${esc(p.id)}"${check(selected.includes(p.id))}> ${esc(p.name)}</label>`).join("")}
         </fieldset>
@@ -1455,6 +1519,13 @@
         <button type="submit" class="button primary">Lagre låt</button>
       </div>
     </form>`, "edit-song", "edit-title");
+    const tempo = $("edit-bpm");
+    tempo.oninput = updatePreviewMetronome;
+    tempo.onkeydown = event => {
+      if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+      event.preventDefault();
+      stepEditorTempo(event.key === "ArrowUp" ? 1 : -1);
+    };
     $("song-form").onsubmit = event => {
       event.preventDefault();
       const fields = new FormData(event.currentTarget);
@@ -1779,6 +1850,11 @@
       if (!stageState().song?.bpm) return;
       setSetting("pulseHalf", !model.settings.pulseHalf);
     },
+    "preview-pulse"() {
+      previewPlaying = !previewPlaying;
+      updatePreviewMetronome();
+    },
+    "step-bpm": change => stepEditorTempo(Number(change)),
     undo: undoLast,
     "new-set": newSetAction,
     "reset-night": resetNight,
@@ -1857,7 +1933,9 @@
     modal.addEventListener("close", () => {
       if (modal.open) return;
       modalType = null;
+      previewPlaying = false;
       syncExternal();
+      syncPulse();
       const target = modalOpener?.isConnected ? modalOpener : $("stage-title") || $("page-title");
       target?.focus({ preventScroll: true });
       modalOpener = null;
@@ -1886,7 +1964,7 @@
     window.addEventListener("offline", network);
     document.addEventListener("visibilitychange", () => {
       syncWake();
-      syncPulse(activeView() === "scene" ? stageState().song : null);
+      syncPulse();
     });
   }
 

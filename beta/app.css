@@ -240,6 +240,26 @@ textarea { resize: vertical; min-height: 88px; line-height: 1.45; }
 }
 .pulse-dots i.beat { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-wash); }
 .pulse-dots i.downbeat { outline: 3px solid var(--accent); outline-offset: 3px; }
+.song-detail-signals { grid-template-columns: minmax(0, 1fr) minmax(0, 1.65fr); margin-top: 5px; }
+.metronome-preview {
+  min-width: 0; display: grid; align-content: center; gap: 10px; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 13px; background: var(--field);
+}
+.metronome-controls { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px; }
+.metronome-controls .tempo-readout { align-self: center; font-size: 1.32rem; font-variant-numeric: tabular-nums; }
+.metronome-controls .field-label { flex: 1 1 150px; }
+.metronome-controls .button { min-height: 49px; min-width: 9.5rem; }
+.metronome-preview .pulse-dots {
+  --pulse-size: clamp(1.5rem, 8vw, 2.125rem);
+  padding: 5px 6px; border: 0; background: transparent;
+}
+.tempo-stepper { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 6px; }
+.tempo-stepper .icon-button { min-height: 49px; }
+.tempo-stepper input {
+  appearance: textfield; text-align: center; font-weight: 760; font-variant-numeric: tabular-nums; padding-inline: 4px;
+}
+.tempo-stepper input::-webkit-inner-spin-button,
+.tempo-stepper input::-webkit-outer-spin-button { appearance: none; margin: 0; }
 @container (max-width: 350px) {
   .signal-grid.has-tempo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .signal-grid.has-tempo > .signal:first-child {
@@ -481,6 +501,12 @@ dialog::backdrop { background: var(--scrim); }
   .dock-back { min-width: 88px; min-height: 53px; }
   .dock .primary { min-height: 54px; }
   .library-list { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  .song-detail-signals { grid-template-columns: minmax(0, 1fr); }
+  .song-detail-signals > .signal {
+    min-height: 49px; flex-flow: row wrap; align-items: center; justify-content: space-between;
+  }
 }
 @media (max-width: 390px) {
   .stage-tools .wake-label { display: none; }

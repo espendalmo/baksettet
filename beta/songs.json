@@ -881,5 +881,171 @@
       "fusjonistene"
     ],
     "notes": "Intro Hihat + ride > funk groove (BSBS) vers > ref > vers > ref > vers > outro"
+  },
+  {
+    "id": "so-many-roads-joe-bonamassa",
+    "title": "So Many Roads",
+    "artist": "Joe Bonamassa",
+    "bpm": 150,
+    "start": "Tell opp, opptakt gitar",
+    "energy": "middels",
+    "tags": [
+      "blues"
+    ],
+    "projects": [
+      "velvet-storm"
+    ],
+    "notes": "Opptakt git. slow blues, husk tempo"
+  },
+  {
+    "id": "drive-joe-bonamassa",
+    "title": "Drive",
+    "artist": "Joe Bonamassa",
+    "bpm": 125,
+    "start": "",
+    "energy": "middels",
+    "tags": [
+      "blues"
+    ],
+    "projects": [
+      "velvet-storm"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "different-shades-of-blue-joe-bonamassa",
+    "title": "Different Shades of Blue",
+    "artist": "Joe Bonamassa",
+    "bpm": 80,
+    "start": "Tell opp, opptakt gitar",
+    "energy": "middels",
+    "tags": [
+      "blues",
+      "slow"
+    ],
+    "projects": [
+      "velvet-storm"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "driving-towards-the-daylight-joe-bonamassa",
+    "title": "Driving Towards the Daylight",
+    "artist": "Joe Bonamassa",
+    "bpm": 153,
+    "start": "",
+    "energy": "middels",
+    "tags": [
+      "blues"
+    ],
+    "projects": [
+      "velvet-storm"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "just-cos-you-can-don-t-mean-you-should-joe-bonamassa",
+    "title": "Just 'Cos You Can Don't Mean You Should",
+    "artist": "Joe Bonamassa",
+    "bpm": 90,
+    "start": "",
+    "energy": "middels",
+    "tags": [
+      "blues"
+    ],
+    "projects": [
+      "velvet-storm"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "i-know-where-i-belong-joe-bonamassa",
+    "title": "I Know Where I Belong",
+    "artist": "Joe Bonamassa",
+    "bpm": 100,
+    "start": "",
+    "energy": "middels",
+    "tags": [
+      "blues"
+    ],
+    "projects": [
+      "velvet-storm"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "no-good-place-for-the-lonely-joe-bonamassa",
+    "title": "No Good Place For The Lonely",
+    "artist": "Joe Bonamassa",
+    "bpm": 104,
+    "start": "",
+    "energy": "middels",
+    "tags": [
+      "blues"
+    ],
+    "projects": [
+      "velvet-storm"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "self-inflicted-wounds-joe-bonamassa",
+    "title": "Self-Inflicted Wounds",
+    "artist": "Joe Bonamassa",
+    "bpm": 140,
+    "start": "",
+    "energy": "middels",
+    "tags": [
+      "blues"
+    ],
+    "projects": [
+      "velvet-storm"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "sloe-gin-joe-bonamassa",
+    "title": "Sloe Gin",
+    "artist": "Joe Bonamassa",
+    "bpm": 138,
+    "start": "",
+    "energy": "middels",
+    "tags": [
+      "blues"
+    ],
+    "projects": [
+      "velvet-storm"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "i-ll-play-the-blues-for-you-joe-bonamassa",
+    "title": "I'll Play The Blues For You",
+    "artist": "Joe Bonamassa",
+    "bpm": 95,
+    "start": "",
+    "energy": "middels",
+    "tags": [
+      "blues"
+    ],
+    "projects": [
+      "velvet-storm"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "living-on-the-moon-joe-bonamassa",
+    "title": "Living On The Moon",
+    "artist": "Joe Bonamassa",
+    "bpm": 130,
+    "start": "",
+    "energy": "middels",
+    "tags": [
+      "blues"
+    ],
+    "projects": [
+      "velvet-storm"
+    ],
+    "notes": ""
   }
 ]
