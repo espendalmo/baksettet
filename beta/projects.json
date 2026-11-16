@@ -9,5 +9,27 @@
         "items": []
       }
     ]
+  },
+  {
+    "id": "fusjonistene",
+    "name": "Fusjonistene",
+    "setlists": [
+      {
+        "id": "standard",
+        "name": "Standard",
+        "items": []
+      }
+    ]
+  },
+  {
+    "id": "velvet-storm",
+    "name": "Velvet Storm",
+    "setlists": [
+      {
+        "id": "standard",
+        "name": "Standard",
+        "items": []
+      }
+    ]
   }
 ]

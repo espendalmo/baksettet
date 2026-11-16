@@ -289,24 +289,28 @@
     if (focus) $("stage-title")?.focus({ preventScroll: true });
   }
 
-  function scrollToPlayingSong() {
+  function scrollToPlayingSong(previousScroll = null) {
     const card = $("playing-song");
-    const lights = $("stage-pulse-dots");
-    if (!card || !lights) return;
+    if (!card) return;
 
+    const scrollY = window.scrollY;
     const viewportTop = Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 12;
     const dock = $("dock");
-    const viewportBottom = dock.hidden ? window.innerHeight : dock.getBoundingClientRect().top;
-    const pulse = lights.getBoundingClientRect();
+    const dockTop = dock.hidden ? window.innerHeight : dock.getBoundingClientRect().top;
+    const toast = $("toast");
+    const viewportBottom = toast.hidden ? dockTop : Math.min(dockTop, toast.getBoundingClientRect().top);
+    const cardBounds = card.getBoundingClientRect();
+    const pulse = $("stage-pulse-dots")?.getBoundingClientRect();
     const notes = $("scene-notes");
     const firstNote = !notes.hidden && notes.querySelector(".note-text, .empty-box");
     const note = firstNote ? firstNote.getBoundingClientRect() : null;
-    const readingBottom = note ? Math.min(note.bottom, note.top + 48) : pulse.bottom;
-    const cardTop = card.getBoundingClientRect().top - viewportTop;
-    const pulseTop = pulse.top - viewportTop;
-    const offset = Math.min(pulseTop, Math.max(cardTop, readingBottom - viewportBottom + 12));
-    const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
-    window.scrollTo({ top: Math.max(0, window.scrollY + offset), behavior });
+    const readingBottom = note ? Math.min(note.bottom, note.top + 48) : (pulse || cardBounds).bottom;
+    const target = previousScroll ?? (scrollY + cardBounds.top - viewportTop);
+    const needed = scrollY + readingBottom - viewportBottom + 12;
+    const limit = scrollY + (pulse || note || cardBounds).top - viewportTop;
+    const top = Math.max(0, Math.min(limit, Math.max(target, needed)));
+    const behavior = previousScroll !== null || matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
+    window.scrollTo({ top, behavior });
   }
 
   function setMode(mode) {
@@ -411,6 +415,7 @@
     }
     const pause = stage.fixed && item.type === "pause";
     const label = pause ? "Avslutt pause" : "Marker som spilt";
+    const previousScroll = pulseEnabled && stage.song?.bpm ? window.scrollY : null;
     if (!commit(next => {
       if (stage.fixed) {
         const run = runFor(next);
@@ -428,8 +433,11 @@
     lastAdvance = now;
     suggestions = null;
     render();
-    stageTop(true);
     notify(pause ? "Pausen er ferdig" : "Markert som spilt", { canUndo: true });
+    if (previousScroll !== null && stageState().song) {
+      scrollToPlayingSong(previousScroll);
+      $("stage-title")?.focus({ preventScroll: true });
+    } else stageTop(true);
   }
 
   function previous(stage) {
@@ -1046,11 +1054,13 @@
     }, "danger");
   }
 
-  function findRow(item, action, dataId, metadata, position, selected = false) {
+  function findRow(item, action, dataId, metadata, { position, selected = false, copies = 0 } = {}) {
     return `<button type="button" class="list-button" data-action="${action}" ${idData(dataId)}
       ${selected ? 'aria-current="true"' : ""}>
       <span class="queue-index" aria-hidden="true">${position || icon(action === "add-song-result" ? "plus" : "music")}</span>
-      <span class="list-name"><strong>${esc(item.title)}</strong><small>${esc(metadata)}</small></span>
+      <span class="list-name"><strong>${esc(item.title)}</strong><small>${esc(metadata)}</small>
+        ${copies ? `<span class="setlist-count">${icon("check")} I listen × ${copies}</span>` : ""}
+      </span>
       <span class="queue-side">${item.bpm ? `${item.bpm} BPM` : icon("chevron")}</span>
     </button>`;
   }
@@ -1074,14 +1084,17 @@
           .filter(({ row }) => matches.has(row.songId)).map(({ row, number }) => {
             const item = song(row.songId);
             const meta = [item.artist, M.startCue(item.start)?.label, stage.run.done.includes(row.entryId) ? "Spilt" : ""].filter(Boolean).join(" · ");
-            return findRow(item, "pick-fixed", row.entryId, meta, String(number).padStart(2, "0"), stage.active?.entryId === row.entryId);
+            return findRow(item, "pick-fixed", row.entryId, meta, {
+              position: String(number).padStart(2, "0"),
+              selected: stage.active?.entryId === row.entryId
+            });
           });
       } else {
         markup = M.songSearch(projectSongs(), query).map(item => {
           const copies = add ? setlist().items.filter(row => row.songId === item.id).length : 0;
-          const meta = [item.artist, M.startCue(item.start)?.label, copies ? `I listen × ${copies}` : "",
+          const meta = [item.artist, M.startCue(item.start)?.label,
             !add && session().played.includes(item.id) ? "Spilt" : ""].filter(Boolean).join(" · ");
-          return findRow(item, add ? "add-song-result" : "pick-free", item.id, meta);
+          return findRow(item, add ? "add-song-result" : "pick-free", item.id, meta, { copies });
         });
       }
       $("find-results").innerHTML = markup.join("") || empty("Ingen treff.");
@@ -1105,12 +1118,14 @@
       next.dirty = true;
     }, "Legg til låt")) return;
     render();
-    if ($("find-input")) {
-      $("find-input").value = "";
-      $("find-results").refresh();
-      $("find-input").focus();
+    const results = $("find-results");
+    if (results) {
+      const scrollTop = modal.scrollTop;
+      const focusedRow = document.activeElement?.dataset?.action === "add-song-result";
+      results.refresh();
+      if (focusedRow) results.querySelector(`[data-id="${CSS.escape(id)}"]`)?.focus({ preventScroll: true });
       $("dialog-message").textContent = `${item.title} lagt til`;
-      modal.scrollTop = 0;
+      modal.scrollTop = scrollTop;
     }
   }
 

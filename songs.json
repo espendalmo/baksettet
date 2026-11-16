@@ -737,5 +737,149 @@
     "projects": [
       "kes"
     ]
+  },
+  {
+    "id": "i-will-remember-toto",
+    "title": "I Will Remember",
+    "artist": "Toto",
+    "bpm": 98,
+    "start": "Tell opp",
+    "energy": "middels",
+    "tags": [
+      "rock",
+      "ballade"
+    ],
+    "projects": [
+      "fusjonistene"
+    ],
+    "notes": "Begynner med opptakt to slag på tom > vers til ref. > vers > 3. veiver ref. > outro som beg."
+  },
+  {
+    "id": "mr-briefcase-lee-ritenour",
+    "title": "Mr. Briefcase",
+    "artist": "Lee Ritenour",
+    "bpm": 119,
+    "start": "Tell opp, keys",
+    "energy": "middels",
+    "tags": [],
+    "projects": [
+      "fusjonistene"
+    ],
+    "notes": "8/16-dels Porcaro-shuffle/groove (BB S) vers > stopp etter ref. til solo 2x veiver > vers > ref. > stopper på ‘Briefcase’."
+  },
+  {
+    "id": "brother-to-brother-gino-vannelli",
+    "title": "Brother to Brother",
+    "artist": "Gino Vannelli",
+    "bpm": 140,
+    "start": "Tell opp",
+    "energy": "høy",
+    "tags": [
+      "fusion",
+      "jazz",
+      "rock"
+    ],
+    "projects": [
+      "fusjonistene"
+    ],
+    "notes": "Rett på tam-overgang intro > vers > ref > vers > bridge hh.hat > solo > bridge h.hat over til bass vs trommer brekk > vers > funky outro"
+  },
+  {
+    "id": "humanoid-bernhoft-the-fashion-bruises",
+    "title": "Humanoid",
+    "artist": "Bernhoft & The Fashion Bruises",
+    "bpm": 130,
+    "start": "Tell opp",
+    "energy": "middels",
+    "tags": [
+      "funk",
+      "pop"
+    ],
+    "projects": [
+      "fusjonistene"
+    ],
+    "notes": "Rett på popbeat intro, vers (stopp før ref) > ref > vers (stopp) > ref > bridge h.hat + b.tromme, fusion funk > ref (langt stopp) > outro."
+  },
+  {
+    "id": "i-g-y-donald-fagen",
+    "title": "I.G.Y.",
+    "artist": "Donald Fagen",
+    "bpm": 119,
+    "start": "Tell opp",
+    "energy": "middels",
+    "tags": [
+      "reggae",
+      "pop",
+      "rock",
+      "fusion"
+    ],
+    "projects": [
+      "fusjonistene"
+    ],
+    "notes": "Intro b.tromme + keys (reggae) > vers (light shuffle BSBB) > ref > vers > ref > solo/vers > ref > orig. fade"
+  },
+  {
+    "id": "carnaval-santana",
+    "title": "Carnaval",
+    "artist": "Santana",
+    "bpm": 144,
+    "start": "Tell opp, fløyte, timbales",
+    "energy": "middels",
+    "tags": [
+      "rock",
+      "samba"
+    ],
+    "projects": [
+      "fusjonistene"
+    ],
+    "notes": "Hold puls på b.tromme + hhat."
+  },
+  {
+    "id": "e-papa-re-santana",
+    "title": "E Papa Ré",
+    "artist": "Santana",
+    "bpm": 170,
+    "start": "Tell opp",
+    "energy": "middels",
+    "tags": [
+      "rock",
+      "funk"
+    ],
+    "projects": [
+      "fusjonistene"
+    ],
+    "notes": "Tung intro 1-2-3-4, 1-2-3-5, 1-2-3-4-5–6 (x2)"
+  },
+  {
+    "id": "love-games-level-42",
+    "title": "Love Games",
+    "artist": "Level 42",
+    "bpm": 108,
+    "start": "Tell opp, Gitar fade",
+    "energy": "middels",
+    "tags": [
+      "rock",
+      "funk"
+    ],
+    "projects": [
+      "fusjonistene"
+    ],
+    "notes": "Funk 4/4 åpne hhat. BSB > Etter solo, marker på crash 4x STOP > hhat+btromme > vers til outro."
+  },
+  {
+    "id": "josie-david-garfield",
+    "title": "Josie",
+    "artist": "David Garfield",
+    "bpm": 121,
+    "start": "Tell opp",
+    "energy": "middels",
+    "tags": [
+      "rock",
+      "funk"
+    ],
+    "projects": [
+      "fusjonistene"
+    ],
+    "notes": "Intro Hihat + ride > funk groove (BSBS) vers > ref > vers > ref > vers > outro"
   }
 ]
