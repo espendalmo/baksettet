@@ -18,6 +18,57 @@
         "id": "standard",
         "name": "Standard",
         "items": []
+      },
+      {
+        "id": "set-054ee65d-104a-4ee1-a2b0-fdee045ec33b",
+        "name": "Romjulsjazz 2026",
+        "items": [
+          {
+            "type": "song",
+            "songId": "carnaval-santana",
+            "entryId": "song-36033b15-befa-4316-83a7-9cead1903c8a"
+          },
+          {
+            "type": "song",
+            "songId": "humanoid-bernhoft-the-fashion-bruises",
+            "entryId": "song-8b644d88-3c7f-434a-b8b9-746d3572e18f"
+          },
+          {
+            "type": "song",
+            "songId": "brother-to-brother-gino-vannelli",
+            "entryId": "song-cf905ae8-450f-4b28-806b-8859dc50ddcf"
+          },
+          {
+            "type": "song",
+            "songId": "e-papa-re-santana",
+            "entryId": "song-a1c74ea4-24f9-45db-bef9-1db1b1bc5f00"
+          },
+          {
+            "type": "song",
+            "songId": "love-games-level-42",
+            "entryId": "song-f6fb0097-f50a-46bd-af83-1f4f4deeded1"
+          },
+          {
+            "type": "song",
+            "songId": "i-will-remember-toto",
+            "entryId": "song-c2e8cf86-61b7-4e68-aa9d-4f70d5d3b48b"
+          },
+          {
+            "type": "song",
+            "songId": "i-g-y-donald-fagen",
+            "entryId": "song-102766a5-00f1-4728-bd07-d0d274cf5a89"
+          },
+          {
+            "type": "song",
+            "songId": "josie-david-garfield",
+            "entryId": "song-f1822d16-16c0-416f-a658-64dac811bf41"
+          },
+          {
+            "type": "song",
+            "songId": "mr-briefcase-lee-ritenour",
+            "entryId": "song-7bbc1c75-e227-4ff1-9ca0-80a30a4254e7"
+          }
+        ]
       }
     ]
   },
