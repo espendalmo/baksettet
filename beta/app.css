@@ -118,18 +118,20 @@ textarea { resize: vertical; min-height: 88px; line-height: 1.45; }
 }
 .loading { margin-top: 30px; color: var(--muted); }
 
-.status-bar-fill { display: none; }
-/* The fixed, opaque strip lets iOS use a solid fill for its top scroll edge. */
+/* Match Mattopia 1.17: an opaque header outside the scrolling content. */
 @media (display-mode: standalone) {
-  .status-bar-fill {
-    display: block;
-    position: fixed;
-    inset: 0 0 auto;
-    height: max(8px, env(safe-area-inset-top, 0px));
-    background: var(--bg);
-    pointer-events: none;
-    z-index: 2;
+  #app {
+    height: 100svh; height: 100dvh;
+    display: flex; flex-direction: column; overflow: clip;
   }
+  .masthead { flex-shrink: 0; }
+  .shell {
+    flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    scroll-padding: 12px 0 calc(124px + env(safe-area-inset-bottom, 0px));
+  }
+  body.has-dock #app { padding-bottom: 0; }
+  body.has-dock .shell { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+  body:has(dialog[open]) .shell { overflow-y: hidden; }
 }
 
 .masthead { border-bottom: 1px solid var(--line); background: var(--bg); }

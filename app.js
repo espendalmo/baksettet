@@ -284,8 +284,12 @@
     } else location.hash = hash;
   }
 
+  function pageScroller() {
+    return matchMedia("(display-mode: standalone)").matches ? $("content") : window;
+  }
+
   function stageTop(focus = false) {
-    window.scrollTo({ top: 0, behavior: "auto" });
+    pageScroller().scrollTo({ top: 0, behavior: "auto" });
     if (focus) $("stage-title")?.focus({ preventScroll: true });
   }
 
@@ -294,7 +298,9 @@
     const lights = $("stage-pulse-dots");
     if (!card || !lights) return;
 
-    const viewportTop = $("status-bar-fill")?.getBoundingClientRect().bottom ?? 0;
+    const scroller = pageScroller();
+    const viewportTop = scroller === window ? 0 : scroller.getBoundingClientRect().top;
+    const scrollTop = scroller === window ? window.scrollY : scroller.scrollTop;
     const dock = $("dock");
     const viewportBottom = dock.hidden ? window.innerHeight : dock.getBoundingClientRect().top;
     const pulse = lights.getBoundingClientRect();
@@ -306,7 +312,7 @@
     const pulseTop = pulse.top - viewportTop;
     const offset = Math.min(pulseTop - 12, Math.max(cardTop - 12, readingBottom - viewportBottom + 12));
     const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
-    window.scrollTo({ top: Math.max(0, window.scrollY + offset), behavior });
+    scroller.scrollTo({ top: Math.max(0, scrollTop + offset), behavior });
   }
 
   function setMode(mode) {
