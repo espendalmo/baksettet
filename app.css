@@ -118,8 +118,24 @@ textarea { resize: vertical; min-height: 88px; line-height: 1.45; }
 }
 .loading { margin-top: 30px; color: var(--muted); }
 
-/* Match Mattopia 1.17: an opaque header outside the scrolling content. */
+.status-bar-fill { display: none; }
 @media (display-mode: standalone) {
+  @supports (-webkit-touch-callout: none) {
+    /* WebKit samples opaque fixed backgrounds taller than 10px at the scroll edge.
+       Clipping to empty text keeps the fill from painting over the header. */
+    .status-bar-fill {
+      display: block;
+      position: fixed;
+      inset: 0 0 auto;
+      height: calc(11px + env(safe-area-inset-top, 0px));
+      z-index: 11;
+      pointer-events: none;
+      background-color: var(--bg);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+  }
+
   #app {
     height: 100svh; height: 100dvh;
     display: flex; flex-direction: column; overflow: clip;
